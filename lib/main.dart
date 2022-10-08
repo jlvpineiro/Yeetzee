@@ -55,6 +55,12 @@ class HomePage extends StatelessWidget {
   }
 }
 
+extension CategoryToString on Category {
+  String toShortString() {
+    return toString().split('.').last;
+  }
+}
+
 class InGameState extends StatefulWidget {
   @override
   _InGameState createState() => _InGameState();
@@ -83,6 +89,11 @@ class _InGameState extends State<InGameState> {
     }
   }
 
+  void submitTurn() {
+    game.submitTurn();
+    setState(() {});
+  }
+
   Image getDieImage(Die die) {
     return Image.asset(
         'graphics/dice/${die.value}${die.keep ? 'Kept' : ''}.png');
@@ -93,49 +104,49 @@ class _InGameState extends State<InGameState> {
     return die.toggleDie();
   }
 
+  void selectCategory(Category category) {
+    if (game.getCurrentPlayer().categoryScores[category] == -1 &&
+        !game.getCurrentDice().unRolled()) {
+      game.selectedCategory = category;
+      setState(() {});
+    }
+  }
+
+  String getCategoryButtonText(Category category) {
+    if (game.selectedCategory == category) {
+      return '${category.toShortString()}: ${game.getCategoryScore(category)}';
+    } else if (game.getCurrentPlayer().categoryScores[category]! > -1) {
+      return '${category.toShortString()}: ${game.getCurrentPlayer().categoryScores[category]}';
+    } else {
+      return category.toShortString();
+    }
+  }
+
+  List<Category> categories = [
+    Category.ONES,
+    Category.TWOS,
+    Category.THREES,
+    Category.FOURS,
+    Category.FIVES,
+    Category.SIXES,
+    Category.THREE_OF_A_KIND,
+    Category.FOUR_OF_A_KIND,
+    Category.FULL_HOUSE,
+    Category.SMALL_STRAIGHT,
+    Category.LARGE_STRAIGHT,
+    Category.YEETZEE,
+    Category.CHANCE
+  ];
+
   @override
   Widget build(BuildContext context) {
     // Category Buttons
-    ElevatedButton onesButton = ElevatedButton(
-        onPressed: () => game.getCategoryScore(Category.ONES),
-        child: const Text('Ones'));
-    ElevatedButton twosButton = ElevatedButton(
-        onPressed: () => game.getCategoryScore(Category.TWOS),
-        child: const Text('Twos'));
-    ElevatedButton threesButton = ElevatedButton(
-        onPressed: () => game.getCategoryScore(Category.THREES),
-        child: const Text('Threes'));
-    ElevatedButton foursButton = ElevatedButton(
-        onPressed: () => game.getCategoryScore(Category.FOURS),
-        child: const Text('Fours'));
-    ElevatedButton fivesButton = ElevatedButton(
-        onPressed: () => game.getCategoryScore(Category.FIVES),
-        child: const Text('Fives'));
-    ElevatedButton sixesButton = ElevatedButton(
-        onPressed: () => game.getCategoryScore(Category.SIXES),
-        child: const Text('Sixes'));
-
-    ElevatedButton toakButton = ElevatedButton(
-        onPressed: () => game.getCategoryScore(Category.THREE_OF_A_KIND),
-        child: const Text('ToaK'));
-    ElevatedButton foakButton = ElevatedButton(
-        onPressed: () => game.getCategoryScore(Category.FOUR_OF_A_KIND),
-        child: const Text('FoaK'));
-    ElevatedButton fhButton = ElevatedButton(
-        onPressed: () => game.getCategoryScore(Category.FULL_HOUSE),
-        child: const Text('FH'));
-    ElevatedButton ssButton = ElevatedButton(
-        onPressed: () => game.getCategoryScore(Category.SMALL_STRAIGHT),
-        child: const Text('SS'));
-    ElevatedButton lsButton = ElevatedButton(
-        onPressed: () => game.getCategoryScore(Category.LARGE_STRAIGHT),
-        child: const Text('LS'));
-    ElevatedButton yeetButton = ElevatedButton(
-        onPressed: () => game.getCategoryScore(Category.YEETZEE),
-        child: const Text('Yeetzee'));
-    ElevatedButton chanceButton = ElevatedButton(
-        onPressed: () => game.getCategoryScore(Category.CHANCE),
-        child: const Text('?'));
+    List<ElevatedButton> categoryButtons = [];
+    for (int i = 0; i < categories.length; i++) {
+      categoryButtons.add(ElevatedButton(
+          onPressed: () => selectCategory(categories[i]),
+          child: Text(getCategoryButtonText(categories[i]))));
+    }
 
     //Die Buttons
     List<DieIconButton> diceIconButtons = [];
@@ -151,30 +162,36 @@ class _InGameState extends State<InGameState> {
         ),
         body: Column(children: [
           Expanded(
+              child: Text(
+                  'Player: ${game.currentTurn % 2 != 0 ? 1 : 2}, Rolls: ${game.rolls}/3')),
+          Expanded(
+              child: Text(
+                  'P1 Score: ${game.p1.score}, P2 Score: ${game.p2.score}')),
+          Expanded(
               child: Row(
             children: [
               Expanded(
                 child: Column(
                   children: [
-                    Expanded(child: onesButton),
-                    Expanded(child: twosButton),
-                    Expanded(child: threesButton),
-                    Expanded(child: foursButton),
-                    Expanded(child: fivesButton),
-                    Expanded(child: sixesButton),
+                    Expanded(child: categoryButtons[0]),
+                    Expanded(child: categoryButtons[1]),
+                    Expanded(child: categoryButtons[2]),
+                    Expanded(child: categoryButtons[3]),
+                    Expanded(child: categoryButtons[4]),
+                    Expanded(child: categoryButtons[5]),
                   ],
                 ),
               ),
               Expanded(
                   child: Column(
                 children: [
-                  Expanded(child: toakButton),
-                  Expanded(child: foakButton),
-                  Expanded(child: fhButton),
-                  Expanded(child: ssButton),
-                  Expanded(child: lsButton),
-                  Expanded(child: yeetButton),
-                  Expanded(child: chanceButton),
+                  Expanded(child: categoryButtons[6]),
+                  Expanded(child: categoryButtons[7]),
+                  Expanded(child: categoryButtons[8]),
+                  Expanded(child: categoryButtons[9]),
+                  Expanded(child: categoryButtons[10]),
+                  Expanded(child: categoryButtons[11]),
+                  Expanded(child: categoryButtons[12]),
                 ],
               )),
             ],
@@ -191,6 +208,12 @@ class _InGameState extends State<InGameState> {
             child: ElevatedButton(
               onPressed: () => roll(game, diceIconButtons),
               child: const Text('Roll'),
+            ),
+          ),
+          Expanded(
+            child: ElevatedButton(
+              onPressed: submitTurn,
+              child: const Text('Submit'),
             ),
           ),
         ]));

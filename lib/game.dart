@@ -1,6 +1,7 @@
 import 'dart:math';
 
 enum Category {
+  NONE,
   ONES,
   TWOS,
   THREES,
@@ -20,16 +21,22 @@ class Game {
   Player p1;
   Player p2;
   int currentTurn;
+  int rolls;
+  Category selectedCategory;
 
   Game(int numDice)
       : p1 = Player(numDice),
         p2 = Player(numDice),
-        currentTurn = 1;
+        currentTurn = 1,
+        rolls = 3,
+        selectedCategory = Category.NONE;
 
   Player getCurrentPlayer() {
     if (currentTurn % 2 != 0) {
+      print("Current player 1");
       return p1;
     } else {
+      print("Current player 2");
       return p2;
     }
   }
@@ -39,7 +46,31 @@ class Game {
   }
 
   bool rollDice() {
-    return getCurrentPlayer().rollDice();
+    if (rolls > 0) {
+      bool rolled = getCurrentPlayer().rollDice();
+      if (rolled) {
+        rolls--;
+        selectedCategory = Category.NONE;
+      }
+      return rolled;
+    } else {
+      return false;
+    }
+  }
+
+  void submitTurn() {
+    if (!getCurrentDice().unRolled() && selectedCategory != Category.NONE) {
+      int score = getCategoryScore(selectedCategory);
+      Player currentPlayer = getCurrentPlayer();
+      if (currentPlayer.categoryScores[selectedCategory] == -1) {
+        currentPlayer.categoryScores[selectedCategory] = score;
+        currentPlayer.score += score;
+        currentPlayer.resetDice();
+        currentTurn++;
+        selectedCategory = Category.NONE;
+        rolls = 3;
+      }
+    }
   }
 
   DiceSet getCurrentDice() {
@@ -83,6 +114,10 @@ class Player {
     return playerDice.rollDice();
   }
 
+  void resetDice() {
+    return playerDice.resetDice();
+  }
+
   List<int> getCurrentDiceValues() {
     return playerDice.getDiceValues();
   }
@@ -109,6 +144,13 @@ class DiceSet {
     dice = initDice(numDice);
   }
 
+  /// Resets dice for submitting a turn
+  void resetDice() {
+    for (Die d in dice) {
+      d.resetDie();
+    }
+  }
+
   /// Initializes a set of [numDice] dice (usually 5).
   List<Die> initDice(int numDice) {
     List<Die> dice = [];
@@ -133,6 +175,18 @@ class DiceSet {
       completeRoll();
     }
     return !allKeep;
+  }
+
+  bool unRolled() {
+    bool unrolled = true;
+    for (Die d in dice) {
+      print(d.unrolled);
+      if (!d.unrolled) {
+        unrolled = false;
+        break;
+      }
+    }
+    return unrolled;
   }
 
   /// Notifies player that no dice can be rolled. Nothing else happens.
@@ -179,6 +233,9 @@ class DiceSet {
 
   /// Checks the value of the dice set for a particular category
   int checkDice(Category category) {
+    if (unRolled()) {
+      return 0;
+    }
     int total = 0;
     switch (category) {
       case Category.ONES:
@@ -323,6 +380,13 @@ class Die {
       : keep = false,
         value = 0,
         unrolled = true;
+
+  /// Resets die for when a turn is submitted
+  resetDie() {
+    keep = false;
+    value = 0;
+    unrolled = true;
+  }
 
   /// Checks if the die can be rolled, rolls it if it can.
   /// Returns either the new value or -1 if it can't be rolled.
