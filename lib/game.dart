@@ -197,7 +197,6 @@ class DiceSet {
   /// Runs the roll animation and increments the number of rolls that the player has taken.
   void completeRoll() {
     List<int> diceValues = getDiceValues();
-    print(diceValues);
   }
 
   /// Returns a list of the die values
@@ -393,7 +392,7 @@ class Die {
   int roll() {
     unrolled = false;
     if (!keep) {
-      int newValue = Random().nextInt(5) + 1;
+      int newValue = Random().nextInt(6) + 1;
       print('Changing value from $value to $newValue');
       value = newValue;
       return newValue;

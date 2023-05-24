@@ -113,12 +113,27 @@ class _InGameState extends State<InGameState> {
   }
 
   String getCategoryButtonText(Category category) {
+    String categoryString = category.toShortString();
     if (game.selectedCategory == category) {
-      return '${category.toShortString()}: ${game.getCategoryScore(category)}';
+      return '$categoryString: $categoryString';
     } else if (game.getCurrentPlayer().categoryScores[category]! > -1) {
-      return '${category.toShortString()}: ${game.getCurrentPlayer().categoryScores[category]}';
+      return '$categoryString: ${game.getCurrentPlayer().categoryScores[category]}';
     } else {
-      return category.toShortString();
+      return categoryString;
+    }
+  }
+
+  String getCategoryButtonScoreText(Category category) {
+    if (game.selectedCategory == category) {
+      return game.getCategoryScore(category).toString().padLeft(2, " ");
+    } else if (game.getCurrentPlayer().categoryScores[category]! > -1) {
+      return game
+          .getCurrentPlayer()
+          .categoryScores[category]
+          .toString()
+          .padLeft(2, " ");
+    } else {
+      return "  ";
     }
   }
 
@@ -138,85 +153,122 @@ class _InGameState extends State<InGameState> {
     Category.CHANCE
   ];
 
-  @override
-  Widget build(BuildContext context) {
-    // Category Buttons
-    List<ElevatedButton> categoryButtons = [];
-    for (int i = 0; i < categories.length; i++) {
-      categoryButtons.add(ElevatedButton(
-          onPressed: () => selectCategory(categories[i]),
-          child: Text(getCategoryButtonText(categories[i]))));
-    }
+  Image getCategoryButtonImage(Category category) {
+    String categoryString = category.toShortString().toLowerCase();
+    return Image.asset('graphics/categories/$categoryString.png');
+  }
 
-    //Die Buttons
+  IconButton createCategoryButton(Category category) {
+    return IconButton(
+        onPressed: () => selectCategory(category),
+        icon: getCategoryButtonImage(category));
+  }
+
+  List<IconButton> createCategoryButtonsList(List<Category> categories) {
+    List<IconButton> categoryButtons = [];
+    for (int i = 0; i < categories.length; i++) {
+      categoryButtons.add(createCategoryButton(categories[i]));
+    }
+    return categoryButtons;
+  }
+
+  Widget createCategoryButtonWidgetList(List<Category> categories) {
+    List<Widget> categoryButtonWidgets = [];
+    categories.forEach((category) => {
+          categoryButtonWidgets.add(Expanded(
+              child: Row(
+            children: [
+              Expanded(child: createCategoryButton(category)),
+              Text(getCategoryButtonScoreText(category))
+            ],
+          )))
+        });
+
+    return Column(children: categoryButtonWidgets);
+  }
+
+  List<DieIconButton> createDiceIconButtons(numDice) {
     List<DieIconButton> diceIconButtons = [];
     for (int i = 0; i < numDice; i++) {
       Die d = game.getCurrentDie(i);
       diceIconButtons.add(DieIconButton(
           pos: i, die: d, icon: getDieImage(d), onPressed: () => toggleDie(d)));
     }
+    return diceIconButtons;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Category Buttons
+    List<IconButton> categoryButtons = createCategoryButtonsList(categories);
+
+    //Die Buttons
+    List<DieIconButton> diceIconButtons = createDiceIconButtons(numDice);
 
     return Scaffold(
         appBar: AppBar(
           title: const Text('In Game'),
         ),
-        body: Column(children: [
-          Expanded(
-              child: Text(
-                  'Player: ${game.currentTurn % 2 != 0 ? 1 : 2}, Rolls: ${game.rolls}/3')),
-          Expanded(
-              child: Text(
-                  'P1 Score: ${game.p1.score}, P2 Score: ${game.p2.score}')),
-          Expanded(
-              child: Row(
-            children: [
+        body: Container(
+            decoration: BoxDecoration(
+                image: DecorationImage(
+                    image: AssetImage("graphics/board.png"),
+                    fit: BoxFit.cover)),
+            child: Column(children: [
+              Text(
+                  'Player: ${game.currentTurn % 2 != 0 ? 1 : 2}, Rolls: ${game.rolls}/3'),
+              Text('P1 Score: ${game.p1.score}, P2 Score: ${game.p2.score}'),
               Expanded(
-                child: Column(
-                  children: [
-                    Expanded(child: categoryButtons[0]),
-                    Expanded(child: categoryButtons[1]),
-                    Expanded(child: categoryButtons[2]),
-                    Expanded(child: categoryButtons[3]),
-                    Expanded(child: categoryButtons[4]),
-                    Expanded(child: categoryButtons[5]),
-                  ],
-                ),
-              ),
-              Expanded(
-                  child: Column(
+                  child: Row(
                 children: [
-                  Expanded(child: categoryButtons[6]),
-                  Expanded(child: categoryButtons[7]),
-                  Expanded(child: categoryButtons[8]),
-                  Expanded(child: categoryButtons[9]),
-                  Expanded(child: categoryButtons[10]),
-                  Expanded(child: categoryButtons[11]),
-                  Expanded(child: categoryButtons[12]),
+                  Expanded(
+                      child: createCategoryButtonWidgetList(
+                          categories.sublist(0, 6))
+
+                      // child: Column(
+                      //   children: [
+                      //     Expanded(child: categoryButtons[0]),
+                      //     Expanded(child: categoryButtons[1]),
+                      //     Expanded(child: categoryButtons[2]),
+                      //     Expanded(child: categoryButtons[3]),
+                      //     Expanded(child: categoryButtons[4]),
+                      //     Expanded(child: categoryButtons[5]),
+                      //   ],
+                      // ),
+                      ),
+                  Expanded(
+                      child:
+                          createCategoryButtonWidgetList(categories.sublist(6))
+                      //     child: Column(
+                      //   children: [
+                      //     Expanded(child: categoryButtons[6]),
+                      //     Expanded(child: categoryButtons[7]),
+                      //     Expanded(child: categoryButtons[8]),
+                      //     Expanded(child: categoryButtons[9]),
+                      //     Expanded(child: categoryButtons[10]),
+                      //     Expanded(child: categoryButtons[11]),
+                      //     Expanded(child: categoryButtons[12]),
+                      //   ],
+                      // )
+                      ),
                 ],
               )),
-            ],
-          )),
-          Expanded(
-              child: Row(children: [
-            Expanded(child: diceIconButtons[0]),
-            Expanded(child: diceIconButtons[1]),
-            Expanded(child: diceIconButtons[2]),
-            Expanded(child: diceIconButtons[3]),
-            Expanded(child: diceIconButtons[4]),
-          ])),
-          Expanded(
-            child: ElevatedButton(
-              onPressed: () => roll(game, diceIconButtons),
-              child: const Text('Roll'),
-            ),
-          ),
-          Expanded(
-            child: ElevatedButton(
-              onPressed: submitTurn,
-              child: const Text('Submit'),
-            ),
-          ),
-        ]));
+              Row(children: [
+                Expanded(child: diceIconButtons[0]),
+                Expanded(child: diceIconButtons[1]),
+                Expanded(child: diceIconButtons[2]),
+                Expanded(child: diceIconButtons[3]),
+                Expanded(child: diceIconButtons[4]),
+              ]),
+              ElevatedButton(
+                onPressed: () => roll(game, diceIconButtons),
+                child: const Text('Roll'),
+              ),
+              ElevatedButton(
+                onPressed: submitTurn,
+                child: const Text('Submit'),
+              ),
+            ])));
   }
 }
 
